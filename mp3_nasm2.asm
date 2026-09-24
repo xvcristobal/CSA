@@ -2,13 +2,13 @@ section .data
     lastname db 67, 82, 73, 83, 84, 79, 66, 65, 76, 10
     lastnameLen equ $ - lastname
 
-    firstname db 32, 88, 72, 69, 65, 87, 78, 10
+    firstname db 32, 32, 32, 32, 88, 72, 69, 65, 87, 78, 10
     firstnameLen equ $ - firstname
 
-    middlename db 32, 32, 86, 73, 68, 65, 10
+    middlename db 32, 32, 32, 32, 32, 32, 32, 32, 86, 73, 68, 65, 10
     middlenameLen equ $ - middlename
 
-    nickname db 32, 32, 32, 83, 69, 66, 10
+    nickname db 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 83, 69, 66, 10
     nicknameLen equ $ - nickname
 
 section .text
