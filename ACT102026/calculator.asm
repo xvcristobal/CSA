@@ -118,23 +118,14 @@ exit_program:
     xor ebx, ebx
     int 0x80
 
-; -------------------------------
-; CLEAR SCREEN PROCEDURE
-; -------------------------------
 clear_screen:
     print clear, clearLen
     ret
 
-; -------------------------------
-; DISPLAY MENU PROCEDURE
-; -------------------------------
 show_menu:
     print menu, menuLen
     ret
 
-; -------------------------------
-; READ INPUT PROCEDURE
-; -------------------------------
 read_line:
     mov eax, 3
     mov ebx, 0
@@ -143,10 +134,6 @@ read_line:
     int 0x80
     ret
 
-; -------------------------------
-; READ NUMBER PROCEDURE
-; Converts ASCII to integer
-; -------------------------------
 read_number:
 read_again:
     call read_line
@@ -193,9 +180,6 @@ bad_number:
     print invalidMsg, invalidLen
     jmp read_again
 
-; -------------------------------
-; CALCULATION PROCEDURE
-; -------------------------------
 calculate:
     mov al, [choice]
 
@@ -259,10 +243,6 @@ display_result:
     print newline, 1
     ret
 
-; -------------------------------
-; PRINT INTEGER PROCEDURE
-; Supports negative numbers
-; -------------------------------
 print_number:
     cmp eax, 0
     jge positive_number
