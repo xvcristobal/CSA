@@ -15,10 +15,10 @@ section .data
     choiceMsg db 'Enter your choice: '
     choiceLen equ $ - choiceMsg
 
-    firstMsg db 'Enter first number (0-99): '
+    firstMsg db 'Enter first number: '
     firstLen equ $ - firstMsg
 
-    secondMsg db 'Enter second number (0-99): '
+    secondMsg db 'Enter second number: '
     secondLen equ $ - secondMsg
 
     sumMsg db 'The sum is '
@@ -36,8 +36,8 @@ section .data
     againMsg db 10, 'Do you want to try again (Y/N): '
     againLen equ $ - againMsg
 
-    invalidMsg db 'Invalid input. Try again.', 10
-    invalidLen equ $ - invalidMsg
+    errorMsg db 'Invalid input!', 10
+    errorLen equ $ - errorMsg
 
     zeroMsg db 'Cannot divide by zero!', 10
     zeroLen equ $ - zeroMsg
@@ -56,22 +56,22 @@ section .bss
 section .text
     global _start
 
-%macro print 2
-    mov eax, 4
-    mov ebx, 1
-    mov ecx, %1
-    mov edx, %2
-    int 0x80
-%endmacro
-
 _start:
+
 main_menu:
-    call clear_screen
-    call show_menu
+    mov ecx, clear
+    mov edx, clearLen
+    call print
 
-    print choiceMsg, choiceLen
-    call read_line
+    mov ecx, menu
+    mov edx, menuLen
+    call print
 
+    mov ecx, choiceMsg
+    mov edx, choiceLen
+    call print
+
+    call read_input
     mov al, [input]
     and al, 0xDF
     mov [choice], al
@@ -85,22 +85,101 @@ main_menu:
     cmp al, 'D'
     je get_numbers
 
-    print invalidMsg, invalidLen
+    mov ecx, errorMsg
+    mov edx, errorLen
+    call print
     jmp main_menu
 
 get_numbers:
-    print firstMsg, firstLen
+    mov ecx, firstMsg
+    mov edx, firstLen
+    call print
+
     call read_number
     mov [num1], eax
 
-    print secondMsg, secondLen
+    mov ecx, secondMsg
+    mov edx, secondLen
+    call print
+
     call read_number
     mov [num2], eax
 
-    call calculate
+    mov al, [choice]
 
-    print againMsg, againLen
-    call read_line
+    cmp al, 'A'
+    je addition
+    cmp al, 'S'
+    je subtraction
+    cmp al, 'M'
+    je multiplication
+    cmp al, 'D'
+    je division
+
+addition:
+    mov eax, [num1]
+    add eax, [num2]
+    mov [result], eax
+
+    mov ecx, sumMsg
+    mov edx, sumLen
+    call print
+    jmp show_result
+
+subtraction:
+    mov eax, [num1]
+    sub eax, [num2]
+    mov [result], eax
+
+    mov ecx, subMsg
+    mov edx, subLen
+    call print
+    jmp show_result
+
+multiplication:
+    mov eax, [num1]
+    imul eax, [num2]
+    mov [result], eax
+
+    mov ecx, mulMsg
+    mov edx, mulLen
+    call print
+    jmp show_result
+
+division:
+    cmp dword [num2], 0
+    je divide_error
+
+    mov eax, [num1]
+    xor edx, edx
+    div dword [num2]
+    mov [result], eax
+
+    mov ecx, divMsg
+    mov edx, divLen
+    call print
+    jmp show_result
+
+divide_error:
+    mov ecx, zeroMsg
+    mov edx, zeroLen
+    call print
+    jmp ask_again
+
+show_result:
+    mov eax, [result]
+    call print_number
+
+    mov ecx, newline
+    mov edx, 1
+    call print
+
+ask_again:
+    mov ecx, againMsg
+    mov edx, againLen
+    call print
+
+    call read_input
 
     mov al, [input]
     and al, 0xDF
@@ -118,15 +197,13 @@ exit_program:
     xor ebx, ebx
     int 0x80
 
-clear_screen:
-    print clear, clearLen
+print:
+    mov eax, 4
+    mov ebx, 1
+    int 0x80
     ret
 
-show_menu:
-    print menu, menuLen
-    ret
-
-read_line:
+read_input:
     mov eax, 3
     mov ebx, 0
     mov ecx, input
@@ -135,31 +212,30 @@ read_line:
     ret
 
 read_number:
-read_again:
-    call read_line
+    call read_input
 
     mov esi, input
     xor eax, eax
     xor ecx, ecx
 
-convert_input:
+convert_number:
     mov bl, [esi]
 
     cmp bl, 10
-    je input_done
+    je number_done
 
     cmp bl, 13
-    je input_done
+    je number_done
 
     cmp bl, '0'
-    jb bad_number
+    jb invalid_number
 
     cmp bl, '9'
-    ja bad_number
+    ja invalid_number
 
     inc ecx
     cmp ecx, 2
-    ja bad_number
+    ja invalid_number
 
     imul eax, eax, 10
 
@@ -168,91 +244,31 @@ convert_input:
     add eax, edx
 
     inc esi
-    jmp convert_input
+    jmp convert_number
 
-input_done:
+number_done:
     cmp ecx, 0
-    je bad_number
-
+    je invalid_number
     ret
 
-bad_number:
-    print invalidMsg, invalidLen
-    jmp read_again
-
-calculate:
-    mov al, [choice]
-
-    cmp al, 'A'
-    je addition
-
-    cmp al, 'S'
-    je subtraction
-
-    cmp al, 'M'
-    je multiplication
-
-    cmp al, 'D'
-    je division
-
-    ret
-
-addition:
-    mov eax, [num1]
-    add eax, [num2]
-    mov [result], eax
-
-    print sumMsg, sumLen
-    jmp display_result
-
-subtraction:
-    mov eax, [num1]
-    sub eax, [num2]
-    mov [result], eax
-
-    print subMsg, subLen
-    jmp display_result
-
-multiplication:
-    mov eax, [num1]
-    imul eax, [num2]
-    mov [result], eax
-
-    print mulMsg, mulLen
-    jmp display_result
-
-division:
-    cmp dword [num2], 0
-    je divide_zero
-
-    mov eax, [num1]
-    xor edx, edx
-    div dword [num2]
-    mov [result], eax
-
-    print divMsg, divLen
-    jmp display_result
-
-divide_zero:
-    print zeroMsg, zeroLen
-    ret
-
-display_result:
-    mov eax, [result]
-    call print_number
-    print newline, 1
-    ret
+invalid_number:
+    mov ecx, errorMsg
+    mov edx, errorLen
+    call print
+    jmp read_number
 
 print_number:
     cmp eax, 0
-    jge positive_number
+    jge positive
 
     push eax
-    print minus, 1
+    mov ecx, minus
+    mov edx, 1
+    call print
     pop eax
     neg eax
 
-positive_number:
+positive:
     mov edi, digits
     add edi, 15
     mov ebx, 10
@@ -265,18 +281,16 @@ convert_result:
     mov [edi], dl
     dec edi
 
-    test eax, eax
-    jnz convert_result
+    cmp eax, 0
+    jne convert_result
 
     inc edi
 
     mov ecx, digits
     add ecx, 16
     sub ecx, edi
-    mov edx, ecx
 
-    mov eax, 4
-    mov ebx, 1
+    mov edx, ecx
     mov ecx, edi
-    int 0x80
+    call print
     ret
